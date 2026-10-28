@@ -61,6 +61,8 @@ dist\wxhook_inject.exe
 
 返回：成功 `{"ret":0,...}`；失败 `ret=-1`。图片/视频同一时刻一张，最小间隔 3 秒。
 
+Postman 调试：在 Postman 里 Import [docs/wx-hook-sol.postman_collection.json](docs/wx-hook-sol.postman_collection.json)，集合内已带 `baseUrl`、`to_wxid`、`img_path`、`video_path` 等变量，改完即可逐个发送。
+
 ## 目录
 
 ```

@@ -1,0 +1,303 @@
+{
+  "info": {
+    "name": "wx-hook-sol",
+    "description": "wx-hook-sol 本地 HTTP 接口集合。\n\n先注入 DLL 并确认微信已登录，再调用这里的请求：\n- 服务地址固定为 http://127.0.0.1:30002，只监听 127.0.0.1。\n- 服务永远返回 HTTP 200，成功与否看响应体里的 ret（0 成功，-1 失败），失败原因在 msg 字段。\n- 响应结构统一为 {\"ret\": 0, \"msg\": \"...\", \"data\": {...}}；msg 只在非空时出现，data 只含 handler 返回的字段。\n- 未登录时除 /status 外的接口都会返回 {\"ret\": -1, \"msg\": \"not logged in\"}。\n- 版本不匹配时只有 /status 和 /ping 可用。/ping 在核心未加载时也能响应。\n- 图片和视频共用同一把串行闸：同一时刻只能发一个，且两次调用之间至少间隔 3 秒，否则请求会阻塞等待。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:30002",
+      "type": "string"
+    },
+    {
+      "key": "to_wxid",
+      "value": "filehelper",
+      "type": "string"
+    },
+    {
+      "key": "content",
+      "value": "wxhook test",
+      "type": "string"
+    },
+    {
+      "key": "img_path",
+      "value": "D:/wxhook/test.png",
+      "type": "string"
+    },
+    {
+      "key": "video_path",
+      "value": "D:/wxhook/test.mp4",
+      "type": "string"
+    },
+    {
+      "key": "member_wxid",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "状态",
+      "description": "健康检查与登录状态。这两个接口在核心未加载或版本不匹配时也能用。",
+      "item": [
+        {
+          "name": "ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": ["{{baseUrl}}"],
+              "path": ["ping"]
+            },
+            "description": "进程存活检查。coreLoaded=0 表示 DLL 已注入但核心初始化失败；logicTid 是微信逻辑线程 id。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret).to.eql(0));",
+                  "pm.test('core loaded', () => pm.expect(j.data.coreLoaded).to.eql(1));",
+                  "pm.test('port is 30002', () => pm.expect(j.data.port).to.eql(30002));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "status (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["status"]
+            },
+            "description": "账号与版本状态。IsLogin=false 时其他接口都会被登录闸拦截；version 与 sizeOfImage 可用于核对微信版本是否仍匹配。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret).to.eql(0));",
+                  "pm.test('logged in', () => pm.expect(j.data.IsLogin).to.eql(true));",
+                  "console.log('wxid =', j.data.self, 'version =', j.data.version);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "status (POST)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["status"]
+            },
+            "description": "与 GET 等价，便于某些只发 POST 的客户端调用。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "发送",
+      "description": "发送类接口。调用前请确认 /status 的 IsLogin 为 true，否则会直接返回 not logged in。\n\nwxid 规则：个人是 wxid_xxx，群是 xxx@chatroom，公众号是 gh_xxx，文件传输助手是 filehelper。",
+      "item": [
+        {
+          "name": "发送文本",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to_wxid\": \"{{to_wxid}}\",\n  \"content\": \"{{content}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/SendTextMsg",
+              "host": ["{{baseUrl}}"],
+              "path": ["SendTextMsg"]
+            },
+            "description": "发送文本消息。to_wxid 与 content 都为空会返回 missing to_wxid/content。\n\ncontent 里可以直接写 \\n 换行（JSON 字符串转义）。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret, 'msg: ' + (j.msg || '')).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "发送图片",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to_wxid\": \"{{to_wxid}}\",\n  \"path\": \"{{img_path}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/SendImgMsg",
+              "host": ["{{baseUrl}}"],
+              "path": ["SendImgMsg"]
+            },
+            "description": "发送图片。path 是微信进程视角下的本地文件路径，必须真实存在；文件由微信客户端自己读取、编码并上传 CDN。\n\n注意：\n- 路径统一用正斜杠（D:/wxhook/a.png）。在 Postman 变量里写反斜杠会被原样插入 JSON 字符串，导致转义错误、请求体解析失败。\n- path 的 UTF-16 长度上限 1024，wxid 上限 128。\n- 与视频共用串行闸，距上一次发图/视频不足 3 秒会阻塞等待。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret, 'msg: ' + (j.msg || '')).to.eql(0));",
+                  "pm.test('finished within 25s', () => pm.expect(pm.response.responseTime).to.be.below(25000));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "发送视频",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to_wxid\": \"{{to_wxid}}\",\n  \"path\": \"{{video_path}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/SendVideoMsg",
+              "host": ["{{baseUrl}}"],
+              "path": ["SendVideoMsg"]
+            },
+            "description": "发送视频，行为与发图一致，内部超时 30 秒。\n\n与图片共用串行闸：一次只能发一个，且间隔至少 3 秒。视频越大耗时越长，Postman 默认超时要调大。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret, 'msg: ' + (j.msg || '')).to.eql(0));",
+                  "pm.test('finished within 35s', () => pm.expect(pm.response.responseTime).to.be.below(35000));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "拍一拍",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to_wxid\": \"{{to_wxid}}\",\n  \"member_wxid\": \"{{member_wxid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/SendPatMsg",
+              "host": ["{{baseUrl}}"],
+              "path": ["SendPatMsg"]
+            },
+            "description": "拍一拍。to_wxid 是会话（个人或群），member_wxid 是要拍的人，可省略。\n\n省略 member_wxid 时拍的是 to_wxid 对应的那个人；在群里省略会拍自己。群会话的 to_wxid 形如 12345678@chatroom。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret, 'msg: ' + (j.msg || '')).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}
