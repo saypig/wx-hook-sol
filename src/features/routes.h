@@ -9,6 +9,7 @@ namespace features {
 
 void register_send(http::Router& r);
 void register_pat(http::Router& r);
+void register_contacts(http::Router& r);
 void register_status(http::Router& r);
 
 bool loginGateBlocks(const std::string& path);

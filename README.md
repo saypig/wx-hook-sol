@@ -1,6 +1,6 @@
 # wx-hook-sol
 
-只做四件事：发文本、发图片、发视频、拍一拍。
+只做四件事：发文本、发图片、发视频、拍一拍；另带三个只读列表：好友列表、群列表、群成员列表。
 
 ## 免责声明
 
@@ -56,10 +56,15 @@ dist\wxhook_inject.exe
 | POST | `/SendImgMsg` | `{"to_wxid":"...", "path":"..."}` |
 | POST | `/SendVideoMsg` | `{"to_wxid":"...", "path":"..."}` |
 | POST | `/SendPatMsg` | `{"to_wxid":"会话", "member_wxid":"被拍人(可省略)"}` |
+| POST | `/GetFriends` | `{"keyword":"可选"}` |
+| POST | `/GetGroups` | `{"keyword":"可选"}` |
+| POST | `/GetRoomMembers` | `{"room_wxid":"...@chatroom"}` |
 | GET/POST | `/status` | 无 |
 | GET | `/ping` | 无 |
 
 返回：成功 `{"ret":0,...}`；失败 `ret=-1`。图片/视频同一时刻一张，最小间隔 3 秒。
+
+三个列表接口直接复用微信已打开的 `contact.db` 句柄（只读，不联网、不走逻辑线程），返回 `{"ret":0,"data":{"count":N,"items":[...]}}`。`/GetFriends` 和 `/GetGroups` 支持 `keyword` 模糊搜索（匹配备注、昵称、微信号和 wxid）；`/GetRoomMembers` 的字段含 `username`、`nickname`、`remark`、头像和 `local_type`（`local_type` 可判断群成员是否为好友）。
 
 Postman 调试：在 Postman 里 Import [docs/wx-hook-sol.postman_collection.json](docs/wx-hook-sol.postman_collection.json)，集合内已带 `baseUrl`、`to_wxid`、`img_path`、`video_path` 等变量，改完即可逐个发送。
 
@@ -69,8 +74,8 @@ Postman 调试：在 Postman 里 Import [docs/wx-hook-sol.postman_collection.jso
 src/app/         DLL 引导、路由注册与请求分发
 src/platform/    RVA 偏移、父目录解析、日志/安全读/WeixinString
 src/transport/   本地 HTTP 服务与 JSON 路由
-src/wechat/      逻辑线程队列、TLS getter hook、图片/视频发送、VEH 救援、当前 wxid
-src/features/    文本/图片/视频、拍一拍、/status 与登录闸
+src/wechat/      逻辑线程队列、TLS getter hook、图片/视频发送、VEH 救援、当前 wxid、SQLite 只读查询
+src/features/    文本/图片/视频、拍一拍、好友/群/群成员列表、/status 与登录闸
 src/injector/    最小注入器
 third_party/     minhook + json.hpp
 ```

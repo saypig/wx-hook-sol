@@ -15,8 +15,10 @@ DLL_SRCS  := src/app/dllmain.cpp src/app/routes.cpp \
              src/platform/runtime.cpp \
              src/transport/http.cpp src/transport/server.cpp \
              src/wechat/account.cpp src/wechat/logic.cpp \
+             src/wechat/db.cpp \
              src/wechat/media.cpp src/wechat/crash.cpp \
-             src/features/send.cpp src/features/pat.cpp src/features/status.cpp
+             src/features/send.cpp src/features/pat.cpp src/features/contacts.cpp \
+             src/features/status.cpp
 MH_SRCS   := third_party/minhook/src/hook.c third_party/minhook/src/buffer.c \
              third_party/minhook/src/trampoline.c third_party/minhook/src/hde/hde64.c
 OBJS      := $(DLL_SRCS:.cpp=.o) $(MH_SRCS:.c=.o)

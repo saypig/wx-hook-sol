@@ -1,4 +1,4 @@
-// offsets.h -- minimal RVAs for WeChat 4.1.15.13 (text / image / video / pat)
+// offsets.h -- minimal RVAs for WeChat 4.1.15.13 (text / image / video / pat / db)
 #pragma once
 #include <cstdint>
 
@@ -37,6 +37,9 @@ inline constexpr uint64_t IMG_BAD_MEMCPY_RET = 0x754407E;
 // pat
 inline constexpr uint64_t SEND_PAT_CORE = 0x398B760;
 inline constexpr uint64_t PAT_SVC_GET = 0x17AE840;
+
+// sqlite3 (read-only queries through the client's already-open handles)
+inline constexpr uint64_t SQLITE3_EXEC = 0x583ECA0;
 
 // sqlite3_vfs / sqlite3 / Btree layout
 inline constexpr int VFS_SZOSFILE = 0x04;

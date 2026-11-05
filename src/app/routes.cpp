@@ -25,6 +25,7 @@ extern "C" int wxhook_init(void) {
         }
         features::register_send(*g_router);
         features::register_pat(*g_router);
+        features::register_contacts(*g_router);
     }
     platform::logf("[core] wxhook_init done, base=%p", (void*)platform::base());
     return 0;

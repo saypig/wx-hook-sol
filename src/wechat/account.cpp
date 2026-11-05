@@ -112,6 +112,20 @@ static void refresh() {
     g_cacheMs = GetTickCount();
 }
 
+static bool validHandle(uintptr_t H) {
+    return H && rpmPtr(H) == g_vfs && (int)rpmU32(H + wxoff::DB_NDB) >= 1;
+}
+
+uintptr_t handleFor(const std::string& basename) {
+    if (g_cache.empty() || GetTickCount() - g_cacheMs > 30000) refresh();
+    for (auto& kv : g_cache)
+        if (kv.first == basename && validHandle(kv.second)) return kv.second;
+    refresh();
+    for (auto& kv : g_cache)
+        if (kv.first == basename && validHandle(kv.second)) return kv.second;
+    return 0;
+}
+
 void init() {
     g_vfs = findVfs();
     platform::logf("[account] win32 VFS=%p", (void*)g_vfs);

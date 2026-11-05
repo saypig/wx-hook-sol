@@ -34,6 +34,16 @@
       "key": "member_wxid",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "room_wxid",
+      "value": "12345678@chatroom",
+      "type": "string"
+    },
+    {
+      "key": "keyword",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -291,6 +301,138 @@
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                   "const j = pm.response.json();",
                   "pm.test('ret == 0', () => pm.expect(j.ret, 'msg: ' + (j.msg || '')).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "列表",
+      "description": "只读列表接口：直接查微信已打开的 contact.db，不联网、不走逻辑线程。\n\n返回结构：{\"ret\":0,\"data\":{\"count\":N,\"items\":[...]}}。未登录时返回 not logged in。",
+      "item": [
+        {
+          "name": "好友列表",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"keyword\": \"{{keyword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/GetFriends",
+              "host": ["{{baseUrl}}"],
+              "path": ["GetFriends"]
+            },
+            "description": "获取通讯录好友（不含公众号、群聊和系统服务号）。每项含 username、local_type、alias、remark、nickname、flag、verify_flag、big_head_url、small_head_url。\n\nkeyword 可选，模糊匹配备注、昵称、微信号和 wxid；留空返回全部。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret, 'msg: ' + (j.msg || '')).to.eql(0));",
+                  "console.log('friends =', j.data.count);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "群列表",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"keyword\": \"{{keyword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/GetGroups",
+              "host": ["{{baseUrl}}"],
+              "path": ["GetGroups"]
+            },
+            "description": "获取本地群列表（contact 表中 *@chatroom 的行）。每项字段与好友列表一致，username 即群号。\n\nkeyword 可选，模糊匹配群备注、群名称、微信号和 wxid；留空返回全部。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret, 'msg: ' + (j.msg || '')).to.eql(0));",
+                  "console.log('groups =', j.data.count);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "群成员列表",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_wxid\": \"{{room_wxid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/GetRoomMembers",
+              "host": ["{{baseUrl}}"],
+              "path": ["GetRoomMembers"]
+            },
+            "description": "获取指定群的成员。room_wxid 为群号（形如 12345678@chatroom），可先用「群列表」查。每项含 username、nickname、remark、big_head_url、small_head_url、local_type；local_type=1 可视为好友。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('ret == 0', () => pm.expect(j.ret, 'msg: ' + (j.msg || '')).to.eql(0));",
+                  "console.log('members =', j.data.count);"
                 ]
               }
             }
